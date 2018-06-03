@@ -38,7 +38,10 @@ public class MainActivity extends AppCompatActivity implements BluetoothLeUart.C
     private boolean isRecentTrain;
     private String recentLabel;
 
-    private static final String DEVICE_NAME = "Adafruit Bluefruit LE";
+    private static final String DEVICE_NAME = "Anthony Arduino BLE";
+
+    private String lastCharacteristic = "";
+    private StringBuilder buffer = new StringBuilder(50);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -291,7 +294,35 @@ public class MainActivity extends AppCompatActivity implements BluetoothLeUart.C
      */
     @Override
     public void onReceive(BluetoothLeUart uart, BluetoothGattCharacteristic rx) {
-        writeLine("Received: " + rx.getStringValue(0));
+        String currentCharacteristic;
+        int endOfPayloadIndex = -1;
+
+        currentCharacteristic = rx.getStringValue(0);
+        writeLine("Received:" + currentCharacteristic);
+
+        if (currentCharacteristic.equals(lastCharacteristic))
+        {
+            return;
+        }
+
+        buffer.append(currentCharacteristic);
+        endOfPayloadIndex = buffer.indexOf("|");
+        writeLine("Current buffer:" + buffer.toString());
+        if (endOfPayloadIndex != -1)
+        {
+            savePayload(buffer.substring(0, endOfPayloadIndex - 1));
+            writeLine("Saving payload:" + buffer.substring(0, endOfPayloadIndex));
+
+            buffer.delete(0, endOfPayloadIndex + 1);
+            writeLine("New buffer:" + buffer.toString());
+        }
+
+        // 1. Get rid of duplicates by checking if most recent stringValue is the same as the current stringValue
+        // 2. Add stringValue to buffer
+        // 3. If end of payload seen, then save the payload and flush the payload from the buffer
+        // 5. Repeat
+
+
 
         // Predict if the recent sample is for testing
         double[] features = new double[3]; // TODO: convert your received string into a double[]
@@ -308,5 +339,12 @@ public class MainActivity extends AppCompatActivity implements BluetoothLeUart.C
 
         // Update number of samples shown
         updateTrainDataCount();
+
+        lastCharacteristic = currentCharacteristic;
+    }
+
+    // Takes a string payload for our data and saves it to
+    public void savePayload(String payload) {
+        return;
     }
 }
