@@ -3,6 +3,8 @@ package edu.uw.ubicomplab.androidaccelapp;
 import android.content.Context;
 import android.widget.Toast;
 
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -28,9 +30,11 @@ public class Model {
     private String testDataFilepath = "testData.arff";
     private Classifier model;
     private Context context;
+    private int subdivisions = 5;
+    private double overlapPercentage = 0.4;
 
     // TODO optional: give your gestures more informative names
-    public String[] outputClasses = {"Gesture1", "Gesture2", "Gesture3"};
+    public String[] outputClasses = {"Football", "Frisbee", "Tennis"};
 
     public Model(Context context) {
         this.context = context;
@@ -38,19 +42,126 @@ public class Model {
 
         // Specify the features
         featureNames = new TreeMap<>();
-        // TODO optional: create more features with more informative names
-        featureNames.put("Feature1", "numeric");
-        featureNames.put("Feature2", "numeric");
-        featureNames.put("Feature3", "numeric");
+        featureNames.put("AccelX1", "numeric");
+        featureNames.put("AccelX2", "numeric");
+        featureNames.put("AccelX3", "numeric");
+        featureNames.put("AccelX4", "numeric");
+        featureNames.put("AccelX5", "numeric");
+        featureNames.put("AccelY1", "numeric");
+        featureNames.put("AccelY2", "numeric");
+        featureNames.put("AccelY3", "numeric");
+        featureNames.put("AccelY4", "numeric");
+        featureNames.put("AccelY5", "numeric");
+        featureNames.put("AccelZ1", "numeric");
+        featureNames.put("AccelZ2", "numeric");
+        featureNames.put("AccelZ3", "numeric");
+        featureNames.put("AccelZ4", "numeric");
+        featureNames.put("AccelZ5", "numeric");
     }
 
     /**
      * Add a sample to the training or testing set with the corresponding label
-     * @param data: your features
+     * @param ax: the x-acceleration data
+     * @param ay: the y-acceleration data
+     * @param az: the z-acceleration data
      * @param outputLabel: the label for the data
      * @param isTraining: whether the sample should go into the train or test set
      */
-    public void addFeatures(double[] data, String outputLabel, boolean isTraining) {
+    public void addFeatures(DescriptiveStatistics ax,
+                            DescriptiveStatistics ay,
+                            DescriptiveStatistics az,
+                            String outputLabel, boolean isTraining) {
+        Double[] data = new Double[featureNames.keySet().size()];
+
+        double[] values;
+        long length;
+        int window_base_size, window_overlap;
+
+        values = ax.getValues();
+        length = ax.getN();
+        window_base_size = (int) (length / subdivisions);
+        window_overlap = (int) (length * overlapPercentage / subdivisions);
+
+        for (int j = 0; j < subdivisions; j++)
+        {
+            int left_overlap, right_overlap;
+            double total = 0;
+            double energy = 0;
+
+            left_overlap = right_overlap = window_overlap;
+            if (j == 0)
+            {
+                left_overlap = 0;
+            }
+            else if (j == subdivisions - 1)
+            {
+                right_overlap = 0;
+            }
+
+            for (int n = 0 - left_overlap; n < window_base_size + right_overlap; n++)
+            {
+                energy = values[j * window_base_size + n];
+                energy *= energy;
+                total += energy;
+            }
+            total = total / (window_base_size + left_overlap + right_overlap);
+            data[j] = total;
+        }
+
+        values = ay.getValues();
+        for (int j = 0; j < subdivisions; j++)
+        {
+            int left_overlap, right_overlap;
+            double total = 0;
+            double energy = 0;
+
+            left_overlap = right_overlap = window_overlap;
+            if (j == 0)
+            {
+                left_overlap = 0;
+            }
+            else if (j == subdivisions - 1)
+            {
+                right_overlap = 0;
+            }
+
+            for (int n = 0 - left_overlap; n < window_base_size + right_overlap; n++)
+            {
+                energy = values[j * window_base_size + n];
+                energy *= energy;
+                total += energy;
+            }
+            total = total / (window_base_size + left_overlap + right_overlap);
+            data[subdivisions + j] = total;
+        }
+
+        values = az.getValues();
+        for (int j = 0; j < subdivisions; j++)
+        {
+            int left_overlap, right_overlap;
+            double total = 0;
+            double energy = 0;
+
+            left_overlap = right_overlap = window_overlap;
+            if (j == 0)
+            {
+                left_overlap = 0;
+            }
+            else if (j == subdivisions - 1)
+            {
+                right_overlap = 0;
+            }
+
+            for (int n = 0 - left_overlap; n < window_base_size + right_overlap; n++)
+            {
+                energy = values[j * window_base_size + n];
+                energy *= energy;
+                total += energy;
+            }
+            total = total / (window_base_size + left_overlap + right_overlap);
+            data[2 * subdivisions + j] = total;
+        }
+
         // Convert the feature vector to Strings
         String[] stringData = new String[featureNames.keySet().size()];
         for (int i=0; i<featureNames.keySet().size(); i++) {
@@ -244,5 +355,23 @@ public class Model {
             return null;
         }
         return writer;
+    }
+
+    private double variance(double[] input) {
+        int length = input.length;
+        double mean = 0;
+        double var = 0;
+        for (int j = 0; j < length; j++)
+        {
+            mean += input[j];
+        }
+        mean = mean / (double) length;
+
+        for (int j = 0; j < length; j++)
+        {
+            var = var + (input[j] - mean) * (input[j] - mean);
+        }
+        var = var / (double) (length - 1);
+        return var;
     }
 }

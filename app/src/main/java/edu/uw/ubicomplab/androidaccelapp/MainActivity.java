@@ -4,6 +4,7 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGattCharacteristic;
+import android.graphics.Color;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -19,6 +20,13 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import com.jjoe64.graphview.GraphView;
+import com.jjoe64.graphview.GridLabelRenderer;
+import com.jjoe64.graphview.series.DataPoint;
+import com.jjoe64.graphview.series.LineGraphSeries;
+
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+
 @SuppressLint("SetTextI18n")
 public class MainActivity extends AppCompatActivity implements BluetoothLeUart.Callback {
 
@@ -28,14 +36,31 @@ public class MainActivity extends AppCompatActivity implements BluetoothLeUart.C
     private TextView gesture1CountText, gesture2CountText, gesture3CountText;
     private List<Button> buttons;
 
+    // Accelerometer
+    private LineGraphSeries<DataPoint> timeAccelX = new LineGraphSeries<>();
+    private LineGraphSeries<DataPoint> timeAccelY = new LineGraphSeries<>();
+    private LineGraphSeries<DataPoint> timeAccelZ = new LineGraphSeries<>();
+
+    // Graph
+    private GraphView graphAccel;
+    private int graphXBounds = 50;
+    private int graphYBounds = 20;
+    private int graphColor[] = {Color.argb(255,244,170,50),
+            Color.argb(255, 60, 175, 240),
+            Color.argb(225, 50, 220, 100)};
+    private static final int MAX_DATA_POINTS_UI_IMU = 100; // Adjust to show more points on graph
+    public int accelGraphXTime = 0;
+
     // Machine learning
     private Model model;
+    private boolean isRecording;
+    private DescriptiveStatistics accelTime, accelX, accelY, accelZ;
     private static final int GESTURE_DURATION_SECS = 1;
 
     // Bluetooth
     private BluetoothLeUart uart;
     private TextView messages;
-    private boolean isRecentTrain;
+    private boolean isTraining;
     private String recentLabel;
 
     private static final String DEVICE_NAME = "Anthony Arduino BLE";
@@ -59,6 +84,15 @@ public class MainActivity extends AppCompatActivity implements BluetoothLeUart.C
         buttons.add((Button) findViewById(R.id.gesture3Button));
         buttons.add((Button) findViewById(R.id.testButton));
 
+        // Initialize the graphs
+        initializeFilteredGraph();
+
+        // Initialize data structures for gesture recording
+        accelTime = new DescriptiveStatistics();
+        accelX = new DescriptiveStatistics();
+        accelY = new DescriptiveStatistics();
+        accelZ = new DescriptiveStatistics();
+
         // Initialize the model
         model = new Model(this);
 
@@ -75,6 +109,33 @@ public class MainActivity extends AppCompatActivity implements BluetoothLeUart.C
                         Manifest.permission.BLUETOOTH_ADMIN,
                         Manifest.permission.ACCESS_FINE_LOCATION,
                         Manifest.permission.ACCESS_COARSE_LOCATION}, 1);
+    }
+
+    /**
+     * Initializes the graph that will show filtered data
+     */
+    public void initializeFilteredGraph() {
+        graphAccel = findViewById(R.id.graphAccel);
+        graphAccel.getGridLabelRenderer().setGridStyle(GridLabelRenderer.GridStyle.HORIZONTAL);
+        graphAccel.setBackgroundColor(Color.TRANSPARENT);
+        graphAccel.getGridLabelRenderer().setHorizontalLabelsVisible(false);
+        graphAccel.getGridLabelRenderer().setVerticalLabelsVisible(true);
+        graphAccel.getViewport().setXAxisBoundsManual(true);
+        graphAccel.getViewport().setYAxisBoundsManual(true);
+        graphAccel.getViewport().setMinX(0);
+        graphAccel.getViewport().setMaxX(graphXBounds);
+        graphAccel.getViewport().setMinY(-graphYBounds);
+        graphAccel.getViewport().setMaxY(graphYBounds);
+        timeAccelX.setColor(graphColor[0]);
+        timeAccelX.setThickness(10);
+        graphAccel.addSeries(timeAccelX);
+        timeAccelY.setColor(graphColor[1]);
+        timeAccelY.setThickness(10);
+        graphAccel.addSeries(timeAccelY);
+        timeAccelZ.setColor(graphColor[2]);
+        timeAccelZ.setThickness(10);
+        graphAccel.addSeries(timeAccelZ);
+        graphAccel.setTitle("Accelerometer");
     }
 
     @Override
@@ -107,32 +168,39 @@ public class MainActivity extends AppCompatActivity implements BluetoothLeUart.C
     public void recordGesture(View v) {
         final View v2 = v;
 
-        runOnUiThread(new Runnable() {
+        // Create the timer to start data collection
+        Timer startTimer = new Timer();
+        TimerTask startTask = new TimerTask() {
             @Override
             public void run() {
-                v2.setEnabled(false);
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        accelTime.clear(); accelX.clear(); accelY.clear(); accelZ.clear();
+                        isRecording = true;
+                        v2.setEnabled(false);
+                    }
+                });
             }
-        });
-        uart.send("start");
-        Log.i("BLE-UART", "done sending start");
+        };
 
         // Figure out which button got pressed to determine label
         switch (v.getId()) {
             case R.id.gesture1Button:
                 recentLabel = model.outputClasses[0];
-                isRecentTrain = true;
+                isTraining = true;
                 break;
             case R.id.gesture2Button:
                 recentLabel = model.outputClasses[1];
-                isRecentTrain = true;
+                isTraining = true;
                 break;
             case R.id.gesture3Button:
                 recentLabel = model.outputClasses[2];
-                isRecentTrain = true;
+                isTraining = true;
                 break;
             default:
                 recentLabel = "?";
-                isRecentTrain = false;
+                isTraining = false;
                 break;
         }
 
@@ -145,8 +213,18 @@ public class MainActivity extends AppCompatActivity implements BluetoothLeUart.C
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        uart.send("stop");
-                        Log.i("BLE-UART", "Done writing stop");
+                        // Add the recent gesture to the train or test set
+                        isRecording = false;
+                        model.addFeatures(accelX, accelY, accelZ, recentLabel, isTraining);
+
+                        // Predict if the recent sample is for testing
+                        if (!isTraining) {
+                            String result = model.test();
+                            resultText.setText("Result: "+result);
+                        }
+
+                        // Update number of samples shown
+                        updateTrainDataCount();
                         v2.setEnabled(true);
                     }
                 });
@@ -154,7 +232,7 @@ public class MainActivity extends AppCompatActivity implements BluetoothLeUart.C
         };
 
         // Start the timers
-//        startTimer.schedule(startTask, 0);
+        startTimer.schedule(startTask, 0);
         endTimer.schedule(endTask, GESTURE_DURATION_SECS*1000);
     }
 
@@ -295,10 +373,15 @@ public class MainActivity extends AppCompatActivity implements BluetoothLeUart.C
     @Override
     public void onReceive(BluetoothLeUart uart, BluetoothGattCharacteristic rx) {
         String currentCharacteristic;
-        int endOfPayloadIndex = -1;
+        int endOfPayloadIndex;
+
+        // 1. Get rid of duplicates by checking if most recent stringValue is the same as the current stringValue
+        // 2. Add stringValue to buffer
+        // 3. If end of payload seen, then save the payload and flush the payload from the buffer
+        // 4. Repeat
 
         currentCharacteristic = rx.getStringValue(0);
-        writeLine("Received:" + currentCharacteristic);
+        //writeLine("Received:" + currentCharacteristic);
 
         if (currentCharacteristic.equals(lastCharacteristic))
         {
@@ -307,44 +390,77 @@ public class MainActivity extends AppCompatActivity implements BluetoothLeUart.C
 
         buffer.append(currentCharacteristic);
         endOfPayloadIndex = buffer.indexOf("|");
-        writeLine("Current buffer:" + buffer.toString());
+        //writeLine("Current buffer:" + buffer.toString());
         if (endOfPayloadIndex != -1)
         {
-            savePayload(buffer.substring(0, endOfPayloadIndex - 1));
-            writeLine("Saving payload:" + buffer.substring(0, endOfPayloadIndex));
+            Log.i("onReceive", "Flushing payload");
+            //writeLine("Flushing payload:" + buffer.substring(0, endOfPayloadIndex));
+            savePayload(buffer.substring(0, endOfPayloadIndex));
+            Log.i("onReceive", "Finished flushing payload");
 
             buffer.delete(0, endOfPayloadIndex + 1);
-            writeLine("New buffer:" + buffer.toString());
+            //writeLine("New buffer:" + buffer.toString());
         }
-
-        // 1. Get rid of duplicates by checking if most recent stringValue is the same as the current stringValue
-        // 2. Add stringValue to buffer
-        // 3. If end of payload seen, then save the payload and flush the payload from the buffer
-        // 5. Repeat
-
-
-
-        // Predict if the recent sample is for testing
-        double[] features = new double[3]; // TODO: convert your received string into a double[]
-        model.addFeatures(features, recentLabel, isRecentTrain);
-        if (!isRecentTrain) {
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    String result = model.test();
-                    resultText.setText("Result: "+result);
-                }
-            });
-        }
-
-        // Update number of samples shown
-        updateTrainDataCount();
 
         lastCharacteristic = currentCharacteristic;
     }
 
     // Takes a string payload for our data and saves it to
     public void savePayload(String payload) {
-        return;
+        int id, xindex, yindex, zindex;
+        double ax, ay, az;
+        long timestamp;
+
+        id = payload.indexOf(':');
+        xindex = id + 1 + 6;
+        yindex = xindex + 6;
+        zindex = yindex + 6;
+
+        accelGraphXTime += 1;
+
+        /*
+        Log.d("savePayload", "id = " + id);
+        Log.d("savePayload", "xindex = " + xindex);
+        Log.d("savePayload", "yindex = " + yindex);
+        Log.d("savePayload", "zindex = " + zindex);
+
+        Log.d("savePayload", "time = " + payload.substring(0, payload.indexOf(':')));
+        Log.d("savePayload", "ax = " + payload.substring(id + 1, xindex));
+        Log.d("savePayload", "ay = " + payload.substring(xindex, yindex));
+        Log.d("savePayload", "az = " + payload.substring(yindex, zindex));
+        */
+
+        timestamp = (long) Double.parseDouble(payload.substring(0, payload.indexOf(':')));
+        ax = Double.parseDouble(payload.substring(id + 1, xindex));
+        ay = Double.parseDouble(payload.substring(xindex, yindex));
+        az = Double.parseDouble(payload.substring(yindex, zindex));
+
+        // Add the original data to the graph
+        final DataPoint dataPointAccX = new DataPoint(accelGraphXTime, ax);
+        final DataPoint dataPointAccY = new DataPoint(accelGraphXTime, ay);
+        final DataPoint dataPointAccZ = new DataPoint(accelGraphXTime, az);
+
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run()
+            {
+                timeAccelX.appendData(dataPointAccX, true, MAX_DATA_POINTS_UI_IMU);
+                timeAccelY.appendData(dataPointAccY, true, MAX_DATA_POINTS_UI_IMU);
+                timeAccelZ.appendData(dataPointAccZ, true, MAX_DATA_POINTS_UI_IMU);
+
+                // Advance the graph
+                graphAccel.getViewport().setMinX(accelGraphXTime-graphXBounds);
+                graphAccel.getViewport().setMaxX(accelGraphXTime);
+            }
+        });
+
+
+        if (isRecording)
+        {
+            accelTime.addValue(timestamp);
+            accelX.addValue(ax);
+            accelY.addValue(ay);
+            accelZ.addValue(az);
+        }
     }
 }
