@@ -1,6 +1,7 @@
 package edu.uw.ubicomplab.androidaccelapp;
 
 import android.content.Context;
+import android.util.Log;
 import android.widget.Toast;
 
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
@@ -67,7 +68,7 @@ public class Model {
      * @param outputLabel: the label for the data
      * @param isTraining: whether the sample should go into the train or test set
      */
-    public void addFeatures(DescriptiveStatistics ax,
+    public Double[] addFeatures(DescriptiveStatistics ax,
                             DescriptiveStatistics ay,
                             DescriptiveStatistics az,
                             String outputLabel, boolean isTraining) {
@@ -81,6 +82,8 @@ public class Model {
         length = ax.getN();
         window_base_size = (int) (length / subdivisions);
         window_overlap = (int) (length * overlapPercentage / subdivisions);
+
+        Log.d("addFeatures", "Length of ax: " + length);
 
         for (int j = 0; j < subdivisions; j++)
         {
@@ -101,7 +104,7 @@ public class Model {
             for (int n = 0 - left_overlap; n < window_base_size + right_overlap; n++)
             {
                 energy = values[j * window_base_size + n];
-                energy *= energy;
+                //energy *= energy;
                 total += energy;
             }
             total = total / (window_base_size + left_overlap + right_overlap);
@@ -128,7 +131,7 @@ public class Model {
             for (int n = 0 - left_overlap; n < window_base_size + right_overlap; n++)
             {
                 energy = values[j * window_base_size + n];
-                energy *= energy;
+                //energy *= energy;
                 total += energy;
             }
             total = total / (window_base_size + left_overlap + right_overlap);
@@ -155,7 +158,7 @@ public class Model {
             for (int n = 0 - left_overlap; n < window_base_size + right_overlap; n++)
             {
                 energy = values[j * window_base_size + n];
-                energy *= energy;
+                //energy *= energy;
                 total += energy;
             }
             total = total / (window_base_size + left_overlap + right_overlap);
@@ -177,6 +180,7 @@ public class Model {
         else {
             testData = stringData;
         }
+        return data;
     }
 
     /**

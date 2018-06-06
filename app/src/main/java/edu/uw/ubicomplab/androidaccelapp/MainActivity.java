@@ -43,11 +43,14 @@ public class MainActivity extends AppCompatActivity implements BluetoothLeUart.C
 
     // Graph
     private GraphView graphAccel;
+    private GraphView xfeatures, yfeatures, zfeatures;
     private int graphXBounds = 50;
     private int graphYBounds = 20;
     private int graphColor[] = {Color.argb(255,244,170,50),
             Color.argb(255, 60, 175, 240),
-            Color.argb(225, 50, 220, 100)};
+            Color.argb(225, 50, 220, 100),
+            Color.argb(225, 180, 50, 255),
+            Color.argb(225, 255, 50, 180)};
     private static final int MAX_DATA_POINTS_UI_IMU = 100; // Adjust to show more points on graph
     public int accelGraphXTime = 0;
 
@@ -55,7 +58,7 @@ public class MainActivity extends AppCompatActivity implements BluetoothLeUart.C
     private Model model;
     private boolean isRecording;
     private DescriptiveStatistics accelTime, accelX, accelY, accelZ;
-    private static final int GESTURE_DURATION_SECS = 1;
+    private static final int GESTURE_DURATION_SECS = 2;
 
     // Bluetooth
     private BluetoothLeUart uart;
@@ -67,6 +70,9 @@ public class MainActivity extends AppCompatActivity implements BluetoothLeUart.C
 
     private String lastCharacteristic = "";
     private StringBuilder buffer = new StringBuilder(50);
+
+    private int colorIndex = 0;
+    private int graphIndex = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -135,7 +141,24 @@ public class MainActivity extends AppCompatActivity implements BluetoothLeUart.C
         timeAccelZ.setColor(graphColor[2]);
         timeAccelZ.setThickness(10);
         graphAccel.addSeries(timeAccelZ);
-        graphAccel.setTitle("Accelerometer");
+
+        xfeatures = findViewById(R.id.xfeatures);
+        xfeatures.getGridLabelRenderer().setGridStyle(GridLabelRenderer.GridStyle.HORIZONTAL);
+        xfeatures.setBackgroundColor(Color.TRANSPARENT);
+        xfeatures.getGridLabelRenderer().setHorizontalLabelsVisible(false);
+        xfeatures.getGridLabelRenderer().setVerticalLabelsVisible(false);
+
+        yfeatures = findViewById(R.id.yfeatures);
+        yfeatures.getGridLabelRenderer().setGridStyle(GridLabelRenderer.GridStyle.HORIZONTAL);
+        yfeatures.setBackgroundColor(Color.TRANSPARENT);
+        yfeatures.getGridLabelRenderer().setHorizontalLabelsVisible(false);
+        yfeatures.getGridLabelRenderer().setVerticalLabelsVisible(false);
+
+        zfeatures = findViewById(R.id.zfeatures);
+        zfeatures.getGridLabelRenderer().setGridStyle(GridLabelRenderer.GridStyle.HORIZONTAL);
+        zfeatures.setBackgroundColor(Color.TRANSPARENT);
+        zfeatures.getGridLabelRenderer().setHorizontalLabelsVisible(false);
+        zfeatures.getGridLabelRenderer().setVerticalLabelsVisible(false);
     }
 
     @Override
@@ -214,8 +237,11 @@ public class MainActivity extends AppCompatActivity implements BluetoothLeUart.C
                     @Override
                     public void run() {
                         // Add the recent gesture to the train or test set
+                        Double[] data;
                         isRecording = false;
-                        model.addFeatures(accelX, accelY, accelZ, recentLabel, isTraining);
+                        data = model.addFeatures(accelX, accelY, accelZ, recentLabel, isTraining);
+
+                        addFeatureDataToGraphs(data);
 
                         // Predict if the recent sample is for testing
                         if (!isTraining) {
@@ -405,6 +431,43 @@ public class MainActivity extends AppCompatActivity implements BluetoothLeUart.C
         lastCharacteristic = currentCharacteristic;
     }
 
+    public void addFeatureDataToGraphs(Double[] data)
+    {
+        LineGraphSeries<DataPoint> xLineGraph = new LineGraphSeries<>();
+        for (int i = 0; i < 5; i++)
+        {
+            DataPoint dataPointAccX = new DataPoint(i, data[i].doubleValue());
+            xLineGraph.appendData(dataPointAccX, false, 5);
+        }
+
+        LineGraphSeries<DataPoint> yLineGraph = new LineGraphSeries<>();
+        for (int i = 0; i < 5; i++)
+        {
+            DataPoint dataPointAccY = new DataPoint(i, data[i + 5].doubleValue());
+            yLineGraph.appendData(dataPointAccY, false, 5);
+        }
+
+        LineGraphSeries<DataPoint> zLineGraph = new LineGraphSeries<>();
+        for (int i = 0; i < 5; i++)
+        {
+            DataPoint dataPointAccZ = new DataPoint(i, data[i + 10].doubleValue());
+            zLineGraph.appendData(dataPointAccZ, false, 5);
+        }
+
+        xLineGraph.setColor(graphColor[colorIndex]);
+        xfeatures.addSeries(xLineGraph);
+        yLineGraph.setColor(graphColor[colorIndex]);
+        yfeatures.addSeries(yLineGraph);
+        zLineGraph.setColor(graphColor[colorIndex]);
+        zfeatures.addSeries(zLineGraph);
+
+        colorIndex++;
+        if (colorIndex == 5)
+        {
+            colorIndex = 0;
+        }
+    }
+
     // Takes a string payload for our data and saves it to
     public void savePayload(String payload) {
         int id, xindex, yindex, zindex;
@@ -423,14 +486,16 @@ public class MainActivity extends AppCompatActivity implements BluetoothLeUart.C
         Log.d("savePayload", "xindex = " + xindex);
         Log.d("savePayload", "yindex = " + yindex);
         Log.d("savePayload", "zindex = " + zindex);
+        */
 
-        Log.d("savePayload", "time = " + payload.substring(0, payload.indexOf(':')));
+        Log.d("savePayload", "payload = " + payload);
+        Log.d("savePayload", "time = " + payload.substring(0, id));
         Log.d("savePayload", "ax = " + payload.substring(id + 1, xindex));
         Log.d("savePayload", "ay = " + payload.substring(xindex, yindex));
         Log.d("savePayload", "az = " + payload.substring(yindex, zindex));
-        */
 
-        timestamp = (long) Double.parseDouble(payload.substring(0, payload.indexOf(':')));
+
+        timestamp = (long) Double.parseDouble(payload.substring(0, id));
         ax = Double.parseDouble(payload.substring(id + 1, xindex));
         ay = Double.parseDouble(payload.substring(xindex, yindex));
         az = Double.parseDouble(payload.substring(yindex, zindex));

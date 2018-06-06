@@ -72,9 +72,39 @@
     <TextView
         android:id="@+id/bluetoothText"
         android:layout_width="match_parent"
-        android:layout_height="200dp"
-        android:layout_above="@id/graphAccel"
+        android:layout_height="100dp"
+        android:layout_above="@id/features"
         android:layout_below="@id/gestureCounts" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:orientation="horizontal"
+        android:id="@+id/features"
+        android:layout_below="@id/graphAccel">
+
+        <com.jjoe64.graphview.GraphView
+            android:id="@+id/xfeatures"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="#fff"/>
+
+        <com.jjoe64.graphview.GraphView
+            android:id="@+id/yfeatures"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="#fff"/>
+
+        <com.jjoe64.graphview.GraphView
+            android:id="@+id/zfeatures"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="#fff"/>
+
+    </LinearLayout>
 
     <com.jjoe64.graphview.GraphView
         android:id="@+id/graphAccel"
