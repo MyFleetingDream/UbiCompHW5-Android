@@ -34,8 +34,12 @@ public class Model {
     private int subdivisions = 5;
     private double overlapPercentage = 0.4;
 
+    private String gesture1Name = "Football";
+    private String gesture2Name = "Frisbee";
+    private String gesture3Name = "Tennis";
+
     // TODO optional: give your gestures more informative names
-    public String[] outputClasses = {"Football", "Frisbee", "Tennis"};
+    public String[] outputClasses = {gesture1Name, gesture2Name, gesture3Name};
 
     public Model(Context context) {
         this.context = context;

@@ -9,7 +9,7 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="70dp"
+        android:layout_height="50dp"
         android:id="@+id/recordButtons"
         android:orientation="horizontal"
         android:layout_alignParentStart="true">
@@ -20,7 +20,7 @@
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:onClick="recordGesture"
-            android:text="Gesture 1"/>
+            android:text="@string/gesture1" />
 
         <Button
             android:id="@+id/gesture2Button"
@@ -28,7 +28,7 @@
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:onClick="recordGesture"
-            android:text="Gesture 2"/>
+            android:text="@string/gesture2" />
 
         <Button
             android:id="@+id/gesture3Button"
@@ -36,7 +36,16 @@
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:onClick="recordGesture"
-            android:text="Gesture 3"/>
+            android:text="@string/gesture3" />
+
+        <Button
+            android:id="@+id/clearButton"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:onClick="clearModel"
+            android:text="Clear" />
+
     </LinearLayout>
 
     <LinearLayout
@@ -72,38 +81,140 @@
     <TextView
         android:id="@+id/bluetoothText"
         android:layout_width="match_parent"
-        android:layout_height="100dp"
+        android:layout_height="70dp"
         android:layout_above="@id/features"
         android:layout_below="@id/gestureCounts" />
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="100dp"
+        android:layout_height="210dp"
         android:orientation="horizontal"
         android:id="@+id/features"
         android:layout_below="@id/graphAccel">
 
-        <com.jjoe64.graphview.GraphView
-            android:id="@+id/xfeatures"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:background="#fff"/>
+        <LinearLayout
+            android:id="@+id/feature1"
+            android:layout_width="90dp"
+            android:layout_height="match_parent"
+            android:layout_below="@id/graphAccel"
+            android:layout_margin="0dp"
+            android:orientation="vertical"
+            android:padding="0dp">
 
-        <com.jjoe64.graphview.GraphView
-            android:id="@+id/yfeatures"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:background="#fff"/>
+            <com.jjoe64.graphview.GraphView
+                android:id="@+id/xfeatures1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="#fff" />
 
-        <com.jjoe64.graphview.GraphView
-            android:id="@+id/zfeatures"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:background="#fff"/>
+            <com.jjoe64.graphview.GraphView
+                android:id="@+id/yfeatures1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="#fff" />
 
+            <com.jjoe64.graphview.GraphView
+                android:id="@+id/zfeatures1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="#fff" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/feature2"
+            android:layout_width="90dp"
+            android:layout_height="match_parent"
+            android:layout_below="@id/graphAccel"
+            android:layout_margin="0dp"
+            android:orientation="vertical"
+            android:padding="0dp">
+
+            <com.jjoe64.graphview.GraphView
+                android:id="@+id/xfeatures2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="#fff" />
+
+            <com.jjoe64.graphview.GraphView
+                android:id="@+id/yfeatures2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="#fff" />
+
+            <com.jjoe64.graphview.GraphView
+                android:id="@+id/zfeatures2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="#fff" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/feature3"
+            android:layout_width="90dp"
+            android:layout_height="match_parent"
+            android:layout_below="@id/graphAccel"
+            android:layout_margin="0dp"
+            android:orientation="vertical"
+            android:padding="0dp">
+
+            <com.jjoe64.graphview.GraphView
+                android:id="@+id/xfeatures3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="#fff" />
+
+            <com.jjoe64.graphview.GraphView
+                android:id="@+id/yfeatures3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="#fff" />
+
+            <com.jjoe64.graphview.GraphView
+                android:id="@+id/zfeatures3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="#fff" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/feature"
+            android:layout_width="90dp"
+            android:layout_height="match_parent"
+            android:layout_below="@id/graphAccel"
+            android:layout_margin="0dp"
+            android:orientation="vertical"
+            android:padding="0dp">
+
+            <com.jjoe64.graphview.GraphView
+                android:id="@+id/xfeatures"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="#fff" />
+
+            <com.jjoe64.graphview.GraphView
+                android:id="@+id/yfeatures"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="#fff" />
+
+            <com.jjoe64.graphview.GraphView
+                android:id="@+id/zfeatures"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="#fff" />
+        </LinearLayout>
     </LinearLayout>
 
     <com.jjoe64.graphview.GraphView
@@ -118,7 +229,7 @@
     <LinearLayout
         android:id="@+id/otherButtons"
         android:layout_width="match_parent"
-        android:layout_height="70dp"
+        android:layout_height="50dp"
         android:layout_above="@id/resultText"
         android:orientation="horizontal">
 
@@ -147,12 +258,12 @@
             android:text="Test" />
 
         <Button
-            android:id="@+id/clearButton"
+            android:id="@+id/eraseTestData"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:onClick="clearModel"
-            android:text="Clear" />
+            android:onClick="eraseGraph"
+            android:text="@string/clearGraphLabel" />
 
     </LinearLayout>
 

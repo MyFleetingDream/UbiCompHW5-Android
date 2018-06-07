@@ -44,6 +44,9 @@ public class MainActivity extends AppCompatActivity implements BluetoothLeUart.C
     // Graph
     private GraphView graphAccel;
     private GraphView xfeatures, yfeatures, zfeatures;
+    private GraphView xfeatures1, yfeatures1, zfeatures1;
+    private GraphView xfeatures2, yfeatures2, zfeatures2;
+    private GraphView xfeatures3, yfeatures3, zfeatures3;
     private int graphXBounds = 50;
     private int graphYBounds = 20;
     private int graphColor[] = {Color.argb(255,244,170,50),
@@ -53,6 +56,10 @@ public class MainActivity extends AppCompatActivity implements BluetoothLeUart.C
             Color.argb(225, 255, 50, 180)};
     private static final int MAX_DATA_POINTS_UI_IMU = 100; // Adjust to show more points on graph
     public int accelGraphXTime = 0;
+
+    private String gesture1Name = "Football";
+    private String gesture2Name = "Frisbee";
+    private String gesture3Name = "Tennis";
 
     // Machine learning
     private Model model;
@@ -159,6 +166,60 @@ public class MainActivity extends AppCompatActivity implements BluetoothLeUart.C
         zfeatures.setBackgroundColor(Color.TRANSPARENT);
         zfeatures.getGridLabelRenderer().setHorizontalLabelsVisible(false);
         zfeatures.getGridLabelRenderer().setVerticalLabelsVisible(false);
+
+        xfeatures1 = findViewById(R.id.xfeatures1);
+        xfeatures1.getGridLabelRenderer().setGridStyle(GridLabelRenderer.GridStyle.HORIZONTAL);
+        xfeatures1.setBackgroundColor(Color.TRANSPARENT);
+        xfeatures1.getGridLabelRenderer().setHorizontalLabelsVisible(false);
+        xfeatures1.getGridLabelRenderer().setVerticalLabelsVisible(false);
+
+        yfeatures1 = findViewById(R.id.yfeatures1);
+        yfeatures1.getGridLabelRenderer().setGridStyle(GridLabelRenderer.GridStyle.HORIZONTAL);
+        yfeatures1.setBackgroundColor(Color.TRANSPARENT);
+        yfeatures1.getGridLabelRenderer().setHorizontalLabelsVisible(false);
+        yfeatures1.getGridLabelRenderer().setVerticalLabelsVisible(false);
+
+        zfeatures1 = findViewById(R.id.zfeatures1);
+        zfeatures1.getGridLabelRenderer().setGridStyle(GridLabelRenderer.GridStyle.HORIZONTAL);
+        zfeatures1.setBackgroundColor(Color.TRANSPARENT);
+        zfeatures1.getGridLabelRenderer().setHorizontalLabelsVisible(false);
+        zfeatures1.getGridLabelRenderer().setVerticalLabelsVisible(false);
+
+        xfeatures2 = findViewById(R.id.xfeatures2);
+        xfeatures2.getGridLabelRenderer().setGridStyle(GridLabelRenderer.GridStyle.HORIZONTAL);
+        xfeatures2.setBackgroundColor(Color.TRANSPARENT);
+        xfeatures2.getGridLabelRenderer().setHorizontalLabelsVisible(false);
+        xfeatures2.getGridLabelRenderer().setVerticalLabelsVisible(false);
+
+        yfeatures2 = findViewById(R.id.yfeatures2);
+        yfeatures2.getGridLabelRenderer().setGridStyle(GridLabelRenderer.GridStyle.HORIZONTAL);
+        yfeatures2.setBackgroundColor(Color.TRANSPARENT);
+        yfeatures2.getGridLabelRenderer().setHorizontalLabelsVisible(false);
+        yfeatures2.getGridLabelRenderer().setVerticalLabelsVisible(false);
+
+        zfeatures2 = findViewById(R.id.zfeatures2);
+        zfeatures2.getGridLabelRenderer().setGridStyle(GridLabelRenderer.GridStyle.HORIZONTAL);
+        zfeatures2.setBackgroundColor(Color.TRANSPARENT);
+        zfeatures2.getGridLabelRenderer().setHorizontalLabelsVisible(false);
+        zfeatures2.getGridLabelRenderer().setVerticalLabelsVisible(false);
+
+        xfeatures3 = findViewById(R.id.xfeatures3);
+        xfeatures3.getGridLabelRenderer().setGridStyle(GridLabelRenderer.GridStyle.HORIZONTAL);
+        xfeatures3.setBackgroundColor(Color.TRANSPARENT);
+        xfeatures3.getGridLabelRenderer().setHorizontalLabelsVisible(false);
+        xfeatures3.getGridLabelRenderer().setVerticalLabelsVisible(false);
+
+        yfeatures3 = findViewById(R.id.yfeatures3);
+        yfeatures3.getGridLabelRenderer().setGridStyle(GridLabelRenderer.GridStyle.HORIZONTAL);
+        yfeatures3.setBackgroundColor(Color.TRANSPARENT);
+        yfeatures3.getGridLabelRenderer().setHorizontalLabelsVisible(false);
+        yfeatures3.getGridLabelRenderer().setVerticalLabelsVisible(false);
+
+        zfeatures3 = findViewById(R.id.zfeatures3);
+        zfeatures3.getGridLabelRenderer().setGridStyle(GridLabelRenderer.GridStyle.HORIZONTAL);
+        zfeatures3.setBackgroundColor(Color.TRANSPARENT);
+        zfeatures3.getGridLabelRenderer().setHorizontalLabelsVisible(false);
+        zfeatures3.getGridLabelRenderer().setVerticalLabelsVisible(false);
     }
 
     @Override
@@ -241,7 +302,7 @@ public class MainActivity extends AppCompatActivity implements BluetoothLeUart.C
                         isRecording = false;
                         data = model.addFeatures(accelX, accelY, accelZ, recentLabel, isTraining);
 
-                        addFeatureDataToGraphs(data);
+                        addFeatureDataToGraphs(data, recentLabel);
 
                         // Predict if the recent sample is for testing
                         if (!isTraining) {
@@ -287,6 +348,13 @@ public class MainActivity extends AppCompatActivity implements BluetoothLeUart.C
         model.resetTrainingData();
         updateTrainDataCount();
         resultText.setText("Result: ");
+    }
+
+    public void eraseGraph(View v)
+    {
+        xfeatures.removeAllSeries();
+        yfeatures.removeAllSeries();
+        zfeatures.removeAllSeries();
     }
 
     /**
@@ -431,7 +499,7 @@ public class MainActivity extends AppCompatActivity implements BluetoothLeUart.C
         lastCharacteristic = currentCharacteristic;
     }
 
-    public void addFeatureDataToGraphs(Double[] data)
+    public void addFeatureDataToGraphs(Double[] data, String recentLabel)
     {
         LineGraphSeries<DataPoint> xLineGraph = new LineGraphSeries<>();
         for (int i = 0; i < 5; i++)
@@ -455,11 +523,33 @@ public class MainActivity extends AppCompatActivity implements BluetoothLeUart.C
         }
 
         xLineGraph.setColor(graphColor[colorIndex]);
-        xfeatures.addSeries(xLineGraph);
         yLineGraph.setColor(graphColor[colorIndex]);
-        yfeatures.addSeries(yLineGraph);
         zLineGraph.setColor(graphColor[colorIndex]);
-        zfeatures.addSeries(zLineGraph);
+
+        if (recentLabel.equals(gesture1Name))
+        {
+            xfeatures1.addSeries(xLineGraph);
+            yfeatures1.addSeries(yLineGraph);
+            zfeatures1.addSeries(zLineGraph);
+        }
+        else if (recentLabel.equals(gesture2Name))
+        {
+            xfeatures2.addSeries(xLineGraph);
+            yfeatures2.addSeries(yLineGraph);
+            zfeatures2.addSeries(zLineGraph);
+        }
+        else if (recentLabel.equals(gesture3Name))
+        {
+            xfeatures3.addSeries(xLineGraph);
+            yfeatures3.addSeries(yLineGraph);
+            zfeatures3.addSeries(zLineGraph);
+        }
+        else
+        {
+            xfeatures.addSeries(xLineGraph);
+            yfeatures.addSeries(yLineGraph);
+            zfeatures.addSeries(zLineGraph);
+        }
 
         colorIndex++;
         if (colorIndex == 5)

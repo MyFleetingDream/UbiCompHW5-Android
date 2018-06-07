@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">AndroidGestureApp</string>
+    <string name="gesture1">football</string>
+    <string name="gesture2">frisbee</string>
+    <string name="gesture3">tennis</string>
+    <string name="clearGraphLabel">erase</string>
 </resources>
